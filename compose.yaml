@@ -1,0 +1,44 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    user: "1000:1000"
+    ports:
+      - 1883:1883
+      - ${PUERTO_MQTTS}:8883
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/config:/mosquitto/config
+      - ./swag/etc/letsencrypt:/var/tmp
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Argentina/Buenos_Aires
+      - URL=${DOMINIO}
+      - VALIDATION=dns
+      - DNSPLUGIN=duckdns
+      - SUBDOMAINS=
+    volumes:
+      - ./swag:/config
+    ports:
+      - ${PUERTO}:443/tcp
+      - 80:80
+    restart: unless-stopped
+  telegrambot:
+    build:
+      context: ./telegrambot
+      dockerfile: Dockerfile
+    image: telegrambot
+    container_name: telegrambot
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+      - TB_TOKEN=${TB_TOKEN}
+    restart: unless-stopped
