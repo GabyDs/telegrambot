@@ -49,6 +49,28 @@ async def connect_mqtt():
         return None
 
 
+async def send_mqtt_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    topic: str,
+    payload: str,
+    success_msg: str,
+):
+    """Función auxiliar para enviar comandos MQTT"""
+    mqtt_client = context.application.bot_data.get("mqtt_client")
+
+    if mqtt_client:
+        try:
+            await mqtt_client.publish(topic, payload)
+            await update.message.reply_text(success_msg)
+            logger.info(f"Mensaje enviado al tópico {topic}: {payload}")
+        except Exception as e:
+            logger.error(f"Error al enviar MQTT: {e}")
+            await update.message.reply_text("Error al enviar el comando.")
+    else:
+        await update.message.reply_text("Cliente MQTT no disponible.")
+
+
 async def setpoint(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Uso: /setpoint <valor>")
@@ -57,22 +79,28 @@ async def setpoint(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         valor = float(context.args[0])
         payload = f'{{"setpoint": {valor}}}'
-
-        mqtt_client = context.application.bot_data.get("mqtt_client")
-
-        if mqtt_client:
-            try:
-                topic = TOPICOS["setpoint"]
-                await mqtt_client.publish(topic, payload)
-                logger.info(f"Mensaje enviado al tópico {topic}: {payload}")
-            except Exception as e:
-                logger.error(f"Error al enviar MQTT: {e}")
-                await update.message.reply_text("Error al enviar el comando.")
-        else:
-            await update.message.reply_text("Cliente MQTT no disponible.")
+        await send_mqtt_command(
+            update, context, TOPICOS["setpoint"], payload, f"Setpoint enviado: {valor}"
+        )
 
     except ValueError:
         await update.message.reply_text("El valor debe ser numérico.")
+
+
+async def modo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Uso: /modo <manual|automatico>")
+        return
+
+    modo_str = context.args[0].lower()
+    if modo_str not in ("manual", "automatico"):
+        await update.message.reply_text("Modo inválido. Use 'manual' o 'automatico'.")
+        return
+
+    payload = f'{{"modo": "{modo_str}"}}'
+    await send_mqtt_command(
+        update, context, TOPICOS["modo"], payload, f"Modo configurado a: {modo_str}"
+    )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -104,8 +132,9 @@ if __name__ == "__main__":
     application = Application.builder().token(TOKEN).build()
 
     application.post_init = post_init
+
     # Handlers de comandos
-    handlers = [("start", start), ("setpoint", setpoint)]
+    handlers = [("start", start), ("setpoint", setpoint), ("modo", modo)]
 
     for command, handler in handlers:
         application.add_handler(CommandHandler(command, handler))
