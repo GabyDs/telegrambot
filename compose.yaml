@@ -41,4 +41,15 @@ services:
     environment:
       - TZ=America/Argentina/Buenos_Aires
       - TB_TOKEN=${TB_TOKEN}
+      - DOMINIO=${DOMINIO}
+      - PUERTO=${PUERTO}
+      - PUERTO_MQTTS=${PUERTO_MQTTS}
+      - MQTT_USR=${MQTT_USR}
+      - MQTT_PASS=${MQTT_PASS}
+      - TOPICO_SETPOINT=${TOPICO_SETPOINT}
+      - TOPICO_MODO=${TOPICO_MODO}
+      - TOPICO_PERIODO=${TOPICO_PERIODO}
+      - TOPICO_DESTELLO=${TOPICO_DESTELLO}
+      - TOPICO_RELE=${TOPICO_RELE}
+      - ID_DEL_DISPOSITIVO=${ID_RASPY}
     restart: unless-stopped

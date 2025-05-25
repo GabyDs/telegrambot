@@ -1,42 +1,48 @@
-import os
-import logging
-import asyncio
+import os, ssl, logging, aiomqtt, asyncio
 
-from telegram import Update
-from telegram.ext import Application, ContextTypes, CommandHandler
+# Logging básico
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("TelegramBot")
 
-# Configurar logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+# MQTT TLS context
+tls_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+tls_context.verify_mode = ssl.CERT_REQUIRED
+tls_context.check_hostname = True
+tls_context.load_default_certs()
 
-token=os.environ["TB_TOKEN"]
-        
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logging.info(update)
-    logging.info("se conectó: " + str(update.message.from_user.id))
-    if update.message.from_user.first_name:
-        nombre=update.message.from_user.first_name
-    else:
-        nombre=""
-    if update.message.from_user.last_name:
-        apellido=update.message.from_user.last_name
-    else:
-        apellido=""
-    await context.bot.send_message(update.message.chat.id, text="Bienvenido al Bot "+ nombre + " " + apellido)
-    # await update.message.reply_text("Bienvenido al Bot "+ nombre + " " + apellido) # también funciona
 
-async def acercade(update: Update, context):
-    await context.bot.send_message(update.message.chat.id, text="Este bot fue creado para el curso de IoT FIO 2025")
+# Variables de entorno
+TOKEN = os.environ["TB_TOKEN"]
+BROKER = os.environ["DOMINIO"]
+PUERTO = int(os.environ["PUERTO_MQTTS"])
+MQTT_USR = os.environ["MQTT_USR"]
+MQTT_PASS = os.environ["MQTT_PASS"]
 
-def main():
-    application = Application.builder().token(token).build()
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('acercade', acercade))
+async def connect_mqtt():
+    """Conecta al broker MQTT"""
+    global mqtt_client
+    try:
+        mqtt_client = aiomqtt.Client(
+            BROKER,
+            username=MQTT_USR,
+            password=MQTT_PASS,
+            port=PUERTO,
+            tls_context=tls_context,
+        )
+        await mqtt_client.__aenter__()
+        logger.info("Cliente MQTT conectado exitosamente")
+        return True
+    except Exception as e:
+        logger.error(f"Error al conectar MQTT: {e}")
+        return False
+
+async def main():
+    logger.info("Iniciando bot y cliente MQTT...")
     
-    # Iniciar el bot
-    application.run_polling()
+    # Conectar MQTT
+    if not await connect_mqtt():
+        logger.error("No se pudo conectar a MQTT. Saliendo...")
+        return
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    asyncio.run(main())

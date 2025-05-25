@@ -1,2 +1,4 @@
 telegram
 python-telegram-bot==22.1
+aiomqtt
+certifi
