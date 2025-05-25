@@ -49,6 +49,32 @@ async def connect_mqtt():
         return None
 
 
+async def setpoint(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Uso: /setpoint <valor>")
+        return
+
+    try:
+        valor = float(context.args[0])
+        payload = f'{{"setpoint": {valor}}}'
+
+        mqtt_client = context.application.bot_data.get("mqtt_client")
+
+        if mqtt_client:
+            try:
+                topic = TOPICOS["setpoint"]
+                await mqtt_client.publish(topic, payload)
+                logger.info(f"Mensaje enviado al tópico {topic}: {payload}")
+            except Exception as e:
+                logger.error(f"Error al enviar MQTT: {e}")
+                await update.message.reply_text("Error al enviar el comando.")
+        else:
+            await update.message.reply_text("Cliente MQTT no disponible.")
+
+    except ValueError:
+        await update.message.reply_text("El valor debe ser numérico.")
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "¡Hola! Comandos disponibles:\n"
@@ -62,44 +88,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def post_init(application: Application):
     """Inicializa el cliente MQTT después de crear la aplicación"""
+    logger.info("Inicializando cliente MQTT...")
     mqtt_client = await connect_mqtt()
-    application.bot_data["mqtt_client"] = mqtt_client
+    if mqtt_client:
+        application.bot_data["mqtt_client"] = mqtt_client
+        logger.info("Cliente MQTT almacenado en bot_data")
+    else:
+        logger.error("No se pudo inicializar el cliente MQTT")
+        application.bot_data["mqtt_client"] = None
 
 
-async def main():
+if __name__ == "__main__":
     logger.info("Iniciando bot y cliente MQTT...")
 
-    # Crear aplicación
     application = Application.builder().token(TOKEN).build()
 
-    # Configurar callbacks
     application.post_init = post_init
-
     # Handlers de comandos
-    handlers = [
-        ("start", start),
-    ]
+    handlers = [("start", start), ("setpoint", setpoint)]
 
     for command, handler in handlers:
         application.add_handler(CommandHandler(command, handler))
 
-    # Inicializar y ejecutar
-    try:
-        await application.initialize()
-        await application.start()
-        await application.updater.start_polling()
-
-        logger.info("Bot iniciado. Presiona Ctrl+C para detener.")
-
-        # Mantener el bot corriendo
-        try:
-            await asyncio.Event().wait()
-        except KeyboardInterrupt:
-            logger.info("Deteniendo bot...")
-
-    finally:
-        await application.stop()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    application.run_polling()
