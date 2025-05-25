@@ -1,4 +1,6 @@
 import os, ssl, logging, aiomqtt, asyncio
+from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update
 
 # Logging básico
 logging.basicConfig(level=logging.INFO)
@@ -17,10 +19,20 @@ BROKER = os.environ["DOMINIO"]
 PUERTO = int(os.environ["PUERTO_MQTTS"])
 MQTT_USR = os.environ["MQTT_USR"]
 MQTT_PASS = os.environ["MQTT_PASS"]
+ID_DEL_DISPOSITIVO = os.environ["ID_DEL_DISPOSITIVO"]
+
+# Tópicos MQTT
+TOPICOS = {
+    "setpoint": f"{ID_DEL_DISPOSITIVO}/{os.environ['TOPICO_SETPOINT']}",
+    "modo": f"{ID_DEL_DISPOSITIVO}/{os.environ['TOPICO_MODO']}",
+    "periodo": f"{ID_DEL_DISPOSITIVO}/{os.environ['TOPICO_PERIODO']}",
+    "destello": f"{ID_DEL_DISPOSITIVO}/{os.environ['TOPICO_DESTELLO']}",
+    "rele": f"{ID_DEL_DISPOSITIVO}/{os.environ['TOPICO_RELE']}",
+}
+
 
 async def connect_mqtt():
     """Conecta al broker MQTT"""
-    global mqtt_client
     try:
         mqtt_client = aiomqtt.Client(
             BROKER,
@@ -31,18 +43,63 @@ async def connect_mqtt():
         )
         await mqtt_client.__aenter__()
         logger.info("Cliente MQTT conectado exitosamente")
-        return True
+        return mqtt_client
     except Exception as e:
         logger.error(f"Error al conectar MQTT: {e}")
-        return False
+        return None
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "¡Hola! Comandos disponibles:\n"
+        "/setpoint <valor>\n"
+        "/modo <manual|automatico>\n"
+        "/periodo <segundos>\n"
+        "/destello\n"
+        "/rele <1|0>"
+    )
+
+
+async def post_init(application: Application):
+    """Inicializa el cliente MQTT después de crear la aplicación"""
+    mqtt_client = await connect_mqtt()
+    application.bot_data["mqtt_client"] = mqtt_client
+
 
 async def main():
     logger.info("Iniciando bot y cliente MQTT...")
-    
-    # Conectar MQTT
-    if not await connect_mqtt():
-        logger.error("No se pudo conectar a MQTT. Saliendo...")
-        return
+
+    # Crear aplicación
+    application = Application.builder().token(TOKEN).build()
+
+    # Configurar callbacks
+    application.post_init = post_init
+
+    # Handlers de comandos
+    handlers = [
+        ("start", start),
+    ]
+
+    for command, handler in handlers:
+        application.add_handler(CommandHandler(command, handler))
+
+    # Inicializar y ejecutar
+    try:
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+
+        logger.info("Bot iniciado. Presiona Ctrl+C para detener.")
+
+        # Mantener el bot corriendo
+        try:
+            await asyncio.Event().wait()
+        except KeyboardInterrupt:
+            logger.info("Deteniendo bot...")
+
+    finally:
+        await application.stop()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
