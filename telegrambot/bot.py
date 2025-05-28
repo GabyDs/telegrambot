@@ -103,6 +103,55 @@ async def modo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def periodo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Uso: /periodo <valor_en_segundos>")
+        return
+
+    if not context.args[0].isdigit():
+        await update.message.reply_text("El valor debe ser un número entero positivo.")
+        return
+
+    valor = context.args[0]
+    payload = f'{{"periodo": {valor}}}'
+    await send_mqtt_command(
+        update,
+        context,
+        TOPICOS["periodo"],
+        payload,
+        f"Periodo configurado a: {valor} segundos",
+    )
+
+
+async def destello(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    payload = '{"destello": 1}'
+    await send_mqtt_command(
+        update,
+        context,
+        TOPICOS["destello"],
+        payload,
+        "LED destello activado en la Raspberry",
+    )
+
+
+async def rele(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Uso: /rele <1|0>")
+        return
+
+    valor = context.args[0]
+    if valor not in ("1", "0"):
+        await update.message.reply_text(
+            "El valor debe ser 1 (encendido) o 0 (apagado)."
+        )
+        return
+
+    payload = f'{{"rele": {valor}}}'
+    await send_mqtt_command(
+        update, context, TOPICOS["rele"], payload, f"Rele configurado a: {valor}"
+    )
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "¡Hola! Comandos disponibles:\n"
@@ -134,7 +183,14 @@ if __name__ == "__main__":
     application.post_init = post_init
 
     # Handlers de comandos
-    handlers = [("start", start), ("setpoint", setpoint), ("modo", modo)]
+    handlers = [
+        ("start", start),
+        ("setpoint", setpoint),
+        ("modo", modo),
+        ("periodo", periodo),
+        ("destello", destello),
+        ("rele", rele),
+    ]
 
     for command, handler in handlers:
         application.add_handler(CommandHandler(command, handler))
