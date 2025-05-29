@@ -1,4 +1,27 @@
 services:
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - TZ=America/Argentina/Buenos_Aires
+    volumes:
+      - ./mariadb:/var/lib/mysql:Z
+    ports:
+      - 3306:3306
+    restart: unless-stopped
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      - PMA_HOST=mariadb
+    ports:
+      - 8080:80
+    depends_on:
+      - mariadb
   mosquitto:
     image: eclipse-mosquitto
     container_name: mosquitto
