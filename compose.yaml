@@ -18,6 +18,7 @@ services:
     restart: always
     environment:
       - PMA_HOST=mariadb
+      - PMA_ABSOLUTE_URI=https://${DOMINIO}:${PUERTO}/phpmyadmin/
     ports:
       - 8080:80
     depends_on:
