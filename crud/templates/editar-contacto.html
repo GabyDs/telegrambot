@@ -1,0 +1,10 @@
+{% extends "layout.html" %} {% block body %}
+
+<form action="{{url_for('actualizar_contacto',id=contacto['id'])}}" method="POST">
+    <input type="text" name="nombre" value="{{contacto['nombre']}}" />
+    <input type="text" name="tel" value="{{contacto['tel']}}" />
+    <input type="text" name="email" value="{{contacto['email']}}" />
+    <button type="submit">Actualizar</button>
+</form>
+
+{% endblock %}

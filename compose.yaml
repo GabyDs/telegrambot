@@ -56,27 +56,27 @@ services:
       - ${PUERTO}:443/tcp
       - 80:80
     restart: unless-stopped
-  telegrambot:
-    build:
-      context: ./telegrambot
-      dockerfile: Dockerfile
-    image: telegrambot
-    container_name: telegrambot
-    environment:
-      - TZ=America/Argentina/Buenos_Aires
-      - TB_TOKEN=${TB_TOKEN}
-      - DOMINIO=${DOMINIO}
-      - PUERTO=${PUERTO}
-      - PUERTO_MQTTS=${PUERTO_MQTTS}
-      - MQTT_USR=${MQTT_USR}
-      - MQTT_PASS=${MQTT_PASS}
-      - TOPICO_SETPOINT=${TOPICO_SETPOINT}
-      - TOPICO_MODO=${TOPICO_MODO}
-      - TOPICO_PERIODO=${TOPICO_PERIODO}
-      - TOPICO_DESTELLO=${TOPICO_DESTELLO}
-      - TOPICO_RELE=${TOPICO_RELE}
-      - ID_DEL_DISPOSITIVO=${ID_DEL_DISPOSITIVO}
-    restart: unless-stopped
+  # telegrambot:
+  #   build:
+  #     context: ./telegrambot
+  #     dockerfile: Dockerfile
+  #   image: telegrambot
+  #   container_name: telegrambot
+  #   environment:
+  #     - TZ=America/Argentina/Buenos_Aires
+  #     - TB_TOKEN=${TB_TOKEN}
+  #     - DOMINIO=${DOMINIO}
+  #     - PUERTO=${PUERTO}
+  #     - PUERTO_MQTTS=${PUERTO_MQTTS}
+  #     - MQTT_USR=${MQTT_USR}
+  #     - MQTT_PASS=${MQTT_PASS}
+  #     - TOPICO_SETPOINT=${TOPICO_SETPOINT}
+  #     - TOPICO_MODO=${TOPICO_MODO}
+  #     - TOPICO_PERIODO=${TOPICO_PERIODO}
+  #     - TOPICO_DESTELLO=${TOPICO_DESTELLO}
+  #     - TOPICO_RELE=${TOPICO_RELE}
+  #     - ID_DEL_DISPOSITIVO=${ID_DEL_DISPOSITIVO}
+  #   restart: unless-stopped
   crud:
     image: crud
     build:
@@ -88,6 +88,7 @@ services:
       - MYSQL_PASSWORD=${CRUD_PASS}
       - MYSQL_DB=${CRUD_DB}
       - MYSQL_HOST=${MARIADB_SERVER}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
     ports:
       - "8000:8000"
     restart: unless-stopped
