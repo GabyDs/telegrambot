@@ -166,6 +166,13 @@ def actualizar_contacto(id):
     return redirect(url_for("index"))
 
 
+@app.route("/change_theme/<theme>")
+@require_login
+def change_theme(theme):
+    session["theme"] = theme
+    return redirect(request.referrer)
+
+
 @app.route("/logout")
 @require_login
 def logout():

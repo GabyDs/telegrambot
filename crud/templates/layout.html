@@ -1,11 +1,23 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="{{ session.get('theme', 'light') }}">
 
 <head>
     <meta charset="UTF-8" />
     <title>FLASK CRUD 1.6</title>
-    <!-- <link rel="stylesheet" href="https://bootswatch.com/5/cosmo/bootstrap.min.css"> -->
+
+
+    <!-- Esto también funciona -->
+    <!-- {% if session.get("theme") == "dark" %}
     <link rel="stylesheet" href="https://bootswatch.com/5/darkly/bootstrap.min.css">
+    {% elif session.get("theme") == "light" %}
+    <link rel="stylesheet" href="https://bootswatch.com/5/cosmo/bootstrap.min.css">
+    {% else %}
+    <link rel="stylesheet" href="https://bootswatch.com/5/cosmo/bootstrap.min.css">
+    {% endif %} -->
+
+
+    <link rel="stylesheet" href="https://bootswatch.com/5/cosmo/bootstrap.min.css">
+
     {% with messages = get_flashed_messages() %} {% if messages %}
     {% for message in messages %}
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -17,8 +29,20 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">CRUD</a>
+            <div class="mx-auto">
+                {% if session.get("user_id") %}
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle text-white" data-bs-toggle="dropdown" href="#" role="button"
+                        aria-haspopup="true" aria-expanded="false">Tema</a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{{url_for('change_theme', theme='dark')}}">Negro</a>
+                        <a class="dropdown-item" href="{{url_for('change_theme', theme='light')}}">Blanco</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
             {% if session.get("user_id") %}
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
                 <div class="nav-item pe-3 pt-2">{{ session.get("user_id") }}</div>
                 <a href="{{url_for('logout')}}" class="btn btn-secondary my-2 my-sm-0" type="submit">Salir</a>
             </div>
