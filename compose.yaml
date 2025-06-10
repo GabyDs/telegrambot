@@ -77,12 +77,29 @@ services:
   #     - TOPICO_RELE=${TOPICO_RELE}
   #     - ID_DEL_DISPOSITIVO=${ID_DEL_DISPOSITIVO}
   #   restart: unless-stopped
-  crud:
-    image: crud
+  # crud:
+  #   image: crud
+  #   build:
+  #     context: ./crud
+  #     dockerfile: Dockerfile
+  #   container_name: crud
+  #   environment:
+  #     - MYSQL_USER=${CRUD_USER}
+  #     - MYSQL_PASSWORD=${CRUD_PASS}
+  #     - MYSQL_DB=${CRUD_DB}
+  #     - MYSQL_HOST=${MARIADB_SERVER}
+  #     - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+  #   ports:
+  #     - "8000:8000"
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mariadb
+  mqttfront:
+    image: mqttfront
     build:
-      context: ./crud
+      context: ./mqttfront
       dockerfile: Dockerfile
-    container_name: crud
+    container_name: mqttfront
     environment:
       - MYSQL_USER=${CRUD_USER}
       - MYSQL_PASSWORD=${CRUD_PASS}
@@ -90,7 +107,7 @@ services:
       - MYSQL_HOST=${MARIADB_SERVER}
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
     ports:
-      - "8000:8000"
+      - "8001:8001"
     restart: unless-stopped
     depends_on:
       - mariadb
