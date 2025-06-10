@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="row">
+    <div class="col-md-7 mx-auto">
+        <div class="card card-body">
+            <h2>Bienvenido {{ session.user_id }}</h2>
+            <p>Esta es la página principal</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<p>EN LOGIN</p>
+
+<form method="POST" action="{{url_for('login')}}">
+    <input autofocus name="usuario" placeholder="Usuario" type="text">
+    <input name="password" placeholder="Contraseña" type="password">
+    <button type="submit">Aceptar</button>
+    <a href="{{url_for('registrar')}}" style="float: right;">Registrarse</a>
+</form>
+
+{% endblock %}
