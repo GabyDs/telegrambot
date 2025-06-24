@@ -4,16 +4,22 @@ from flask_mysqldb import MySQL
 from werkzeug.security import check_password_hash, generate_password_hash
 import logging
 import os
+from MySQLdb.cursors import DictCursor
+
 
 app = Flask(__name__)
 
 # MySQL connection
-app.secret_key = os.environ["FLASK_SECRET_KEY"]
 app.config["MYSQL_USER"] = os.environ["MYSQL_USER"]
 app.config["MYSQL_PASSWORD"] = os.environ["MYSQL_PASSWORD"]
 app.config["MYSQL_DB"] = os.environ["MYSQL_DB"]
 app.config["MYSQL_HOST"] = os.environ["MYSQL_HOST"]
+
+app.config["SENSORES_DB"] = os.environ["SENSORES_DB"]
+
 app.config["PERMANENT_SESSION_LIFETIME"] = 180
+
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 mysql = MySQL(app)
 
@@ -89,7 +95,20 @@ def login():
 @app.route("/")
 @require_login
 def index():
-    return render_template("index.html")
+    cur = mysql.connection.cursor(DictCursor)
+    try:
+        # Cambiar a la base de datos de sensores
+        cur.execute("USE sensores_remotos")
+        # Obtener todos los id de los sensores
+        cur.execute("SELECT sensor_id FROM mediciones")
+        sensores_id = cur.fetchall()
+        return render_template("index.html", sensores_id=sensores_id)
+    except Exception as e:
+        logging.error(f"Error al obtener los datos de los sensores: {e}")
+        flash("Error al obtener los datos de los sensores")
+        return render_template("index.html", sensores_id=[])
+    finally:
+        cur.close()
 
 
 @app.route("/change_theme/<theme>")
