@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 import logging
 import os
@@ -16,6 +17,9 @@ MQTT_USER = os.environ["MQTT_USER"]
 MQTT_PASS = os.environ["MQTT_PASS"]
 
 app = Flask(__name__)
+# app.config['APPLICATION_ROOT'] = '/mqttfront'
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 
 # MySQL connection
 app.config["MYSQL_USER"] = os.environ["MYSQL_USER"]
