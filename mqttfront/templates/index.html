@@ -1,26 +1,72 @@
-{% extends "layout.html" %}
-{% block body %}
-<div class="row">
-    <div class="col-md-10 mx-auto">
-        <div class="card card-body">
-            <h2>Bienvenido {{ session.user_id }}</h2>
+# Frontend Flask para Comandos MQTT a nodos Rasπ πco
 
-            {% set sensor_ids = sensores_id | map(attribute='sensor_id') | unique | list %}
-            <form method="post" action="{{url_for('comando')}}">
-                <label for="sensor_id">Selecciona un sensor:</label>
-                <select name="sensor_id" id="sensor_id" class="form-select mb-3" required>
-                    {% for sid in sensor_ids %}
-                        <option value="{{ sid }}">{{ sid }}</option>
-                    {% endfor %}
-                </select>
-                <div class="mb-3">
-                    <label for="setpoint">Setpoint (°C):</label>
-                    <input type="number" step="any" name="setpoint" id="setpoint" class="form-control">
-                </div>
-                <button type="submit" name="accion" value="destello" class="btn btn-warning mb-2">Enviar Destello</button>
-                <button type="submit" name="accion" value="setpoint" class="btn btn-success mb-2">Enviar Setpoint</button>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
+Este ejercicio consiste en crear un sitio web con **Flask** que permite enviar los comandos **destello** y **setpoint** a nodos Rasπ πco utilizando **MQTTS** (MQTT sobre TLS). El usuario puede elegir el nodo destinatario de la instrucción desde una **lista desplegable**.
+
+## Funcionalidad
+
+- Login y registro de usuarios.
+- Selección de un nodo (sensor) desde una lista desplegable.
+- Envío de comando **destello** (envía un 1 al nodo seleccionado).
+- Envío de comando **setpoint** (envía un umbral de temperatura al nodo seleccionado).
+- Los comandos se envían usando MQTT seguro (TLS).
+- Mensajes flash para confirmar las acciones.
+
+## Estructura
+
+- **mqttfront.py**: Lógica principal de la aplicación Flask y envío de comandos MQTT.
+- **templates/index.html**: Interfaz web con formulario para seleccionar el nodo y enviar comandos.
+- **Dockerfile** y **compose.yaml**: Para despliegue en contenedores Docker.
+- **swag/nginx**: Configuración de proxy inverso y certificados.
+
+## Variables de entorno necesarias
+
+```env
+FLASK_SECRET_KEY=           # Clave secreta para sesiones Flask
+MYSQL_USER=                 # Usuario de MySQL
+MYSQL_PASSWORD=             # Contraseña de MySQL
+MYSQL_DB=                   # Nombre de la base de datos principal
+MYSQL_HOST=                 # Host de la base de datos
+SENSORES_DB=                # Nombre de la base de datos de sensores
+
+DOMINIO=                    # Dominio público (ej: gabydsch2001.duckdns.org)
+PUERTO_MQTTS=               # Puerto MQTT seguro (ej: 8883)
+MQTT_USER=                  # Usuario MQTT
+MQTT_PASS=                  # Contraseña MQTT
+TOPICO_SETPOINT=            # Subtópico para setpoint
+TOPICO_DESTELLO=            # Subtópico para destello
+```
+
+## Instalación y ejecución
+
+1. Instala las dependencias:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+2. Crea la base de datos y las tablas necesarias en MySQL, por ejemplo:
+    ```sql
+    CREATE TABLE usuarios (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        usuario VARCHAR(255) NOT NULL,
+        hash VARCHAR(255) NOT NULL
+    );
+
+    CREATE TABLE mediciones (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        sensor_id VARCHAR(255) NOT NULL,
+        timestamp DATETIME NOT NULL,
+        temperatura FLOAT,
+        humedad FLOAT
+    );
+    ```
+
+3. Ejecuta la aplicación:
+    ```bash
+    docker compose up -d --build
+    ```
+
+4. Accede a la aplicación en tu navegador en la ruta configurada (por ejemplo, `https://<DOMINIO>:<PUERTO>/mqttfront/`).
+
+---
+
+> Este README corresponde únicamente a la funcionalidad de frontend Flask para enviar comandos MQTT a nodos Rasπ πco, utilizando una lista desplegable para seleccionar el nodo.
