@@ -6,7 +6,7 @@
             <h2>Bienvenido {{ session.user_id }}</h2>
 
             {% set sensor_ids = sensores_id | map(attribute='sensor_id') | unique | list %}
-            <form method="post" action="">
+            <form method="post" action="{{url_for('comando')}}">
                 <label for="sensor_id">Selecciona un sensor:</label>
                 <select name="sensor_id" id="sensor_id" class="form-select mb-3" required>
                     {% for sid in sensor_ids %}

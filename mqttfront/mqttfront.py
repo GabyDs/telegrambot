@@ -6,6 +6,14 @@ import logging
 import os
 from MySQLdb.cursors import DictCursor
 
+import paho.mqtt.client as mqtt
+import ssl
+
+# MQTT configuration
+MQTT_BROKER = os.environ["DOMINIO"]
+MQTT_PORT = int(os.environ["PUERTO_MQTTS"])
+MQTT_USER = os.environ["MQTT_USER"]
+MQTT_PASS = os.environ["MQTT_PASS"]
 
 app = Flask(__name__)
 
@@ -28,6 +36,13 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+def send_mqtt(topic, payload):
+    client = mqtt.Client()
+    client.username_pw_set(MQTT_USER, MQTT_PASS)
+    client.tls_set(cert_reqs=ssl.CERT_REQUIRED)
+    client.connect(MQTT_BROKER, MQTT_PORT)
+    client.publish(topic, payload)
+    client.disconnect()
 
 def require_login(f):
     @wraps(f)
@@ -117,6 +132,33 @@ def change_theme(theme):
     session["theme"] = theme
     return redirect(request.referrer)
 
+@app.route("/comando", methods=["POST"])
+@require_login
+def comando():
+    sensor_id = request.form.get("sensor_id")
+    accion = request.form.get("accion")
+    setpoint = request.form.get("setpoint")
+
+    # Armar los tópicos MQTT con el sensor_id y los nombres de los sub-tópicos
+    topico_setpoint = f"{sensor_id}/{os.environ['TOPICO_SETPOINT']}"
+    topico_destello = f"{sensor_id}/{os.environ['TOPICO_DESTELLO']}"
+
+    if accion == "destello":
+        payload = '{"destello": 1}'
+        send_mqtt(topico_destello, payload)
+        flash(f"Comando destello enviado a {sensor_id}")
+    elif accion == "setpoint" and setpoint:
+        try:
+            valor = float(setpoint)
+            payload = f'{{"setpoint": {valor}}}'
+            send_mqtt(topico_setpoint, payload)
+            flash(f"Setpoint {valor} enviado a {sensor_id}")
+        except ValueError:
+            flash("Setpoint inválido")
+    else:
+        flash("Acción inválida")
+
+    return redirect(url_for("index"))
 
 @app.route("/logout")
 @require_login
